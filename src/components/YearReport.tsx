@@ -160,7 +160,7 @@ const YearReport: React.FC<YearReportProps> = (props) => {
   const handleShare = async () => {
     // Find the download link and set pdfLink
     const pdfLinkElement = await document.querySelector('a[download]');
-    
+
     if (pdfLinkElement && pdfLinkElement instanceof HTMLAnchorElement) {
       pdfLink = pdfLinkElement.href; // Assign the link to the global variable
       console.log('PDF Link:', pdfLink); // Log the PDF link for debugging
@@ -172,23 +172,34 @@ const YearReport: React.FC<YearReportProps> = (props) => {
 
     // Ensure pdfLink is available before attempting to share
     if (pdfLink) {
-      if (navigator.share) {
-        try {
+      try {
+        // Fetch the PDF file as a Blob
+        const response = await fetch(pdfLink);
+        if (!response.ok) {
+          throw new Error('Failed to fetch PDF');
+        }
+        const pdfBlob = await response.blob();
+
+        if (navigator.share) {
           await navigator.share({
             title: `Year Report - ${props.profile.name}`,
             text: 'Here is my year report reflection!',
-            url: pdfLink // It’s guaranteed to not be null here
+            files: [
+              new File([pdfBlob], 'Year_Report.pdf', { type: 'application/pdf' })
+            ]
           });
-        } catch (error) {
-          console.error('Error sharing the PDF:', error);
+        } else {
+          alert('Sharing is not supported on this device.');
         }
-      } else {
-        alert('Sharing is not supported on this device.');
+      } catch (error) {
+        console.error('Error sharing the PDF:', error);
+        alert('Failed to share the PDF.');
       }
     } else {
       alert('PDF link is unavailable. Please try again later.');
     }
   };
+
 
 
   return (
